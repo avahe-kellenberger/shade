@@ -97,7 +97,7 @@ float fbm(vec3 x) {
   return v;
 }
 
-void main(void) {   
+void main(void) {
   vec4 image = texture2D(tex, texCoord);
   // Only apply to opaque pixels.
   if (image.a < 1.0) {

@@ -14,14 +14,11 @@ type
   ## Layers have a `z` axis coordinate.
   ## All nodes on the layer are assumed to share this same coordinate.
   ##
-  Layer* = ref object of RootObj
+  Layer* = ref object of Node
     children: SafeSeq[Node]
     # Location of the layer on the `z` axis.
     z: float
     zChangeListeners: seq[ZChangeListener]
-    onUpdate*: proc(this: Layer, deltaTime: float)
-
-    # TODO: Give shaders to layers?
 
 proc initLayer*(layer: Layer, z: float = 1.0) =
   layer.z = z
@@ -77,10 +74,6 @@ proc addZChangeListenerOnce*(this: Layer, listener: ZChangeListener): ZChangeLis
   this.zChangeListeners.add(onceListener)
   return onceListener
 
-method update*(this: Layer, deltaTime: float) {.base.} =
-  if this.onUpdate != nil:
-    this.onUpdate(this, deltaTime)
-
   for child in this.children:
     if child.shouldUpdate:
       update(child, deltaTime)
@@ -92,13 +85,13 @@ method update*(this: Layer, deltaTime: float) {.base.} =
   if not this.children.areElementsLocked():
     this.children.keepItIf(not it.isDead)
 
-Layer.renderAsParent:
+Layer.renderAsNodeChild:
   for child in this:
     if not child.shouldRender:
       continue
 
     if child.shader != nil:
-      renderWith(child.shader):
+      renderWithShader(child.shader):
         child.render(ctx, offsetX, offsetY)
     else:
       child.render(ctx, offsetX, offsetY)

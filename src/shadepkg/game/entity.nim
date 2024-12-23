@@ -4,7 +4,6 @@ import
 
 import
   node,
-  gamestate,
   ../render/render,
   ../math/vector2
 

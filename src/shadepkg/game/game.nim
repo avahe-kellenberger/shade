@@ -29,8 +29,8 @@ type
     useFixedDeltaTime*: bool
 
     postProcessingShader*: Shader
-    gameWidth*: int
-    gameHeight*: int
+    gameWidth: int
+    gameHeight: int
 
 proc detectWindowScaling(this: Engine): Vector
 proc update*(this: Engine, deltaTime: float)
@@ -94,6 +94,8 @@ proc initEngineSingleton*(
   Game.useFixedDeltaTime = useFixedDeltaTime
 
   gamestate.updateResolution(gameWidth.float, gameHeight.float)
+  gamestate.gameSize.x = float gameWidth
+  gamestate.gameSize.y = float gameHeight
 
   initInputHandlerSingleton(Game.detectWindowScaling())
   initAudioPlayerSingleton()
@@ -178,66 +180,22 @@ proc loop(this: Engine) =
       aspectY = float(this.screen.h) / float(image.h)
       maxAspect = max(aspectX, aspectY)
 
-    if this.scene.camera != nil:
-      let
-        offsetX = max(0.001, this.scene.camera.x - floor(this.scene.camera.x))
-        offsetY = max(0.001, this.scene.camera.y - floor(this.scene.camera.y))
-        # TODO: The second 1.0 should be the plane's z coordinate
-        # This all should be put into Scene, and have it be responsible for rendering each layer
-        inversedScalar = 1.0 / (1.0 - this.scene.camera.z)
-
-      # NOTE: The offset ISN'T scaled, we scale it ourselves.
-      var rect: sdl_gpu.Rect = (
-        cfloat(offsetX * inversedScalar - 1.0),
-        cfloat(offsetY * inversedScalar - 1.0),
-        cfloat image.w,
-        cfloat image.h,
+    template renderImage(r: ptr sdl_gpu.Rect) =
+      blitScale(
+        image,
+        r,
+        this.screen,
+        float(this.screen.w) / 2.0,
+        float(this.screen.h) / 2.0,
+        maxAspect,
+        maxAspect
       )
 
-      if this.postProcessingShader != nil:
-        renderWith(this.postProcessingShader):
-          blitScale(
-            image,
-            rect.addr,
-            this.screen,
-            float(this.screen.w) / 2.0,
-            float(this.screen.h) / 2.0,
-            maxAspect,
-            maxAspect
-          )
-      else:
-        blitScale(
-          image,
-          rect.addr,
-          this.screen,
-          float(this.screen.w) / 2.0,
-          float(this.screen.h) / 2.0,
-          maxAspect,
-          maxAspect
-        )
-
+    if this.postProcessingShader != nil:
+      renderWithShader(this.postProcessingShader):
+        renderImage(nil)
     else:
-      if this.postProcessingShader != nil:
-        renderWith(this.postProcessingShader):
-          blitScale(
-            image,
-            nil,
-            this.screen,
-            float(this.screen.w) / 2.0,
-            float(this.screen.h) / 2.0,
-            maxAspect,
-            maxAspect
-          )
-      else:
-        blitScale(
-          image,
-          nil,
-          this.screen,
-          float(this.screen.w) / 2.0,
-          float(this.screen.h) / 2.0,
-          maxAspect,
-          maxAspect
-        )
+      renderImage(nil)
 
     flip(this.screen)
 

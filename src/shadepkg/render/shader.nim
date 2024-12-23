@@ -72,7 +72,7 @@ proc render*(this: Shader) =
   this.updateTimeUniform(gamestate.runTime)
   this.updateResolutionUniform(gamestate.resolution)
 
-template renderWith*(this: Shader, body: untyped) =
+template renderWithShader*(this: Shader, body: untyped) =
   this.render()
   body
   this.deactivate()
