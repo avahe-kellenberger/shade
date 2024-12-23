@@ -74,6 +74,9 @@ proc addZChangeListenerOnce*(this: Layer, listener: ZChangeListener): ZChangeLis
   this.zChangeListeners.add(onceListener)
   return onceListener
 
+method update*(this: Layer, deltaTime: float) =
+  procCall Node(this).update(deltaTime)
+
   for child in this.children:
     if child.shouldUpdate:
       update(child, deltaTime)
