@@ -191,11 +191,33 @@ proc loop(this: Engine) =
         maxAspect
       )
 
-    if this.postProcessingShader != nil:
-      renderWithShader(this.postProcessingShader):
-        renderImage(nil)
+    if this.scene.camera != nil:
+      let
+        offsetX = max(0.001, this.scene.camera.x - floor(this.scene.camera.x))
+        offsetY = max(0.001, this.scene.camera.y - floor(this.scene.camera.y))
+        # TODO: The second 1.0 should be the plane's z coordinate
+        # This all should be put into Scene, and have it be responsible for rendering each layer
+        inversedScalar = 1.0 / (1.0 - this.scene.camera.z)
+
+      # NOTE: The offset ISN'T scaled, we scale it ourselves.
+      var rect: sdl_gpu.Rect = (
+        cfloat(offsetX * inversedScalar - 1.0),
+        cfloat(offsetY * inversedScalar - 1.0),
+        cfloat image.w,
+        cfloat image.h,
+      )
+
+      if this.postProcessingShader != nil:
+        renderWithShader(this.postProcessingShader):
+          renderImage(rect.addr)
+      else:
+          renderImage(rect.addr)
     else:
-      renderImage(nil)
+      if this.postProcessingShader != nil:
+        renderWithShader(this.postProcessingShader):
+          renderImage(nil)
+      else:
+        renderImage(nil)
 
     flip(this.screen)
 
